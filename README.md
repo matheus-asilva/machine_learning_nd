@@ -2,8 +2,7 @@
 
 Udacity's Machine Learning Nanodegree project files and lecture notes.
 
-This repository contains project files and lecture notes for Udacity's Machine Learning Engineer Nanodegree program which I started working on in March 2018.
-
+This repository contains project files and lecture notes for Udacity's Machine Learning Engineer Nanodegree program.
 
 ## Lecture note reference
 
@@ -51,7 +50,6 @@ This repository contains project files and lecture notes for Udacity's Machine L
 **See lecture notes:** [here](3_unsupervised_learning.pdf)
 
 ### Deep learning
-(Less comprehensive due to my prior knowledge)
 
 **Topics covered in this section:**
 

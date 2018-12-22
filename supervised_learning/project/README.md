@@ -23,7 +23,7 @@ We recommend students install [Anaconda](https://www.continuum.io/downloads), a 
 
 ### Code
 
-The main code for this project is located in the `finding_donors.ipynb` notebook file. Additional supporting code for visualizing the necessary graphs can be found in `visuals.py`. Additionally, the `Report.html` file contains a snapshot of the main code in the jupyter notebook with all code cells executed.
+The main code for this project is located in the `finding_donors.ipynb` notebook file.
 
 ### Run
 

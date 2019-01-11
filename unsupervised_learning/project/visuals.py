@@ -127,10 +127,9 @@ def channel_results(reduced_data, outliers, pca_samples):
 	Visualizes the PCA-reduced cluster data in two dimensions using the full dataset
 	Data is labeled by "Channel" and cues added for student-selected sample data
 	'''
-
 	# Check that the dataset is loadable
 	try:
-	    full_data = pd.read_csv("customers.csv")
+	    full_data = pd.read_csv("./data/customer.csv")
 	except:
 	    print("Dataset could not be loaded. Is the file missing?")       
 	    return False

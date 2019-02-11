@@ -2,6 +2,9 @@
 import os
 os.chdir('/home/matheus/Documents/GitHub/machine_learning_nd/unsupervised_learning/project')
 
+if 'data' not in os.listdir():
+    !wget https://archive.ics.uci.edu/ml/machine-learning-databases/00292/Wholesale%20customers%20data.csv -P 'data'
+
 #%% [markdown]
 # # Machine Learning Engineer Nanodegree
 # ## Unsupervised Learning
@@ -11,6 +14,7 @@ os.chdir('/home/matheus/Documents/GitHub/machine_learning_nd/unsupervised_learni
 # 
 # In addition to implementing code, there will be questions that you must answer which relate to the project and your implementation. Each section where you will answer a question is preceded by a **'Question X'** header. Carefully read each question and provide thorough answers in the following text boxes that begin with **'Answer:'**. Your project submission will be evaluated based on your answers to each of the questions and the implementation you provide.  
 # 
+# >**Note:** Code and Markdown cells can be executed using the **Shift + Enter** keyboard shortcut. In addition, Markdown cells can be edited by typically double-clicking the cell to enter edit mode.
 #%% [markdown]
 # ## Getting Started
 # 
@@ -21,24 +25,26 @@ os.chdir('/home/matheus/Documents/GitHub/machine_learning_nd/unsupervised_learni
 # Run the code block below to load the wholesale customers dataset, along with a few of the necessary Python libraries required for this project. You will know the dataset loaded successfully if the size of the dataset is reported.
 
 #%%
-# Import libraries necessary for this project
+# Import libraries
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from IPython.display import display # Allows the use of display() for DataFrames
-
-# Import supplementary visualizations code visuals.py
-import visuals as vs
+from sklearn.metrics import silhouette_score
+from IPython.display import display
 
 # Pretty display for notebooks
 %matplotlib inline
 
-# Load the wholesale customers dataset
+# Import supplementary visualizations code visuals.py
+import visuals as vs
+
+#%%
+# Load the whosale customers dataset
 data = pd.read_csv('./data/customer.csv')
-data.drop(['Region', 'Channel'], axis=1, inplace=True)
-print('Wholesale customers dataset has {} samples with {} features each.'.format(*data.shape))
-display(data.head())
+data.drop(['Region','Channel'], axis=1, inplace=True)
+print('Whosale customers dataset has {} samples with {} features each '.format(*data.shape))
+data.head()
 
 #%% [markdown]
 # ## Data Exploration
@@ -47,7 +53,7 @@ display(data.head())
 # Run the code block below to observe a statistical description of the dataset. Note that the dataset is composed of six important product categories: **'Fresh'**, **'Milk'**, **'Grocery'**, **'Frozen'**, **'Detergents_Paper'**, and **'Delicatessen'**. Consider what each category represents in terms of products you could purchase.
 
 #%%
-# Display a description of the dataset
+# Display a description
 display(data.describe())
 
 #%% [markdown]
@@ -56,51 +62,27 @@ display(data.describe())
 
 #%%
 # Select three indices of your choice you wish to sample from the dataset
-indices = [3,10,100]
+indices = [5,10,30]
 
-# Create a DataFrame of the chosen samples
-samples = pd.DataFrame(data.loc[indices], columns = data.keys()).reset_index(drop = True)
-print("Chosen samples of wholesale customers dataset:")
-display(samples)
-
+# Creates a DataFrame of the chosen samples
+samples = pd.DataFrame(data.loc[indices], columns=data.keys()).reset_index(drop=True)
+print('Chosen samples of wholesale customers dataset:')
+samples.head()
+#%%
 plt.axes().set_title('Heatmap vs 75% percentile')
-sns.heatmap((samples-data.quantile(q=.75))/data.std(ddof=0), annot=True, square=True);
+sns.heatmap((samples-data.quantile(q=.75))/data.std(ddof=0), annot=True, cbar=False, square=True)
 
 #%% [markdown]
 # ### Question 1
 # Consider the total purchase cost of each product category and the statistical description of the dataset above for your sample customers.  
-# 
-# * What kind of establishment (customer) could each of the three samples you've chosen represent?
-# 
-# **Hint:** Examples of establishments include places like markets, cafes, delis, wholesale retailers, among many others. Avoid using names for establishments, such as saying *"McDonalds"* when describing a sample customer as a restaurant. You can use the mean values for reference to compare your samples with. The mean values are as follows:
-# 
-# * Fresh: 12000.2977
-# * Milk: 5796.2
-# * Grocery: 7951.3
-# * Detergents_paper: 2881.4
-# * Delicatessen: 1524.8
-# 
-# Knowing this, how do your samples compare? Does that help in driving your insight into what kind of establishments they might be? 
-# 
+# *What kind of establishment (customer) could each of the three samples you've chosen represent?*  
+# **Hint:** Examples of establishments include places like markets, cafes, and retailers, among many others. Avoid using names for establishments, such as saying *"McDonalds"* when describing a sample customer as a restaurant.
 
 #%%
-print('Offset from mean of whole dataset')
-display(samples - np.around(data.mean().values, 1))
+samples.head()
 
-print('Offset from median of whole dataset')
-display(samples - np.around(data.median().values, 1))
-
-#%%
-print('Samples vs Dataset Values')
-sns.heatmap((samples - np.around(data.mean().values))/data.std(ddof=0), annot=True); # ddof: degrees of freedom
 #%% [markdown]
-# **Answer:**
-# * Sample 1 - Fresh, Frozen and Delicatessen are well above the mean and median of the dataset for these features.
-# It looks like a small restaurant which serves dishes or snacks, hence needs more of fresh and frozen stuff.
-# * Sample 2 - Grocery, Frozen and Detergents_Paper are well above the mean and median of the dataset for these features.]
-# It looks like a grocery store or a supermarket, that's why he do not have so many Fresh like sample 1.
-# * Sample 3 - All the products are well above the mean and median of the dataset for these features.
-# It looks like a kind of supermarket, which sells everything and can serve some snacks inside of it.
+# **Answer:** 
  
 #%% [markdown]
 # ### Implementation: Feature Relevance
@@ -108,39 +90,28 @@ sns.heatmap((samples - np.around(data.mean().values))/data.std(ddof=0), annot=Tr
 # 
 # In the code block below, you will need to implement the following:
 #  - Assign `new_data` a copy of the data by removing a feature of your choice using the `DataFrame.drop` function.
-#  - Use `sklearn.model_selection.train_test_split` to split the dataset into training and testing sets.
+#  - Use `sklearn.cross_validation.train_test_split` to split the dataset into training and testing sets.
 #    - Use the removed feature as your target label. Set a `test_size` of `0.25` and set a `random_state`.
 #  - Import a decision tree regressor, set a `random_state`, and fit the learner to the training data.
 #  - Report the prediction score of the testing set using the regressor's `score` function.
 
+
 #%%
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeRegressor
-for col in data.keys():
-    # Make a copy of the DataFrame, using the 'drop' function to drop the given feature
-    new_data = data.drop(col, axis=1)
 
-    # Split the data into training and testing sets using the given feature as the target
-    X_train, X_test, y_train, y_test = train_test_split(new_data, data[col], test_size=.25, random_state=0)
-
-    # Create a decision tree regressor and fit it to the training set
-    regressor = DecisionTreeRegressor(random_state=0).fit(X_train, y_train)
-
-    # Report the score of prediction using the testing set
-    score = regressor.score(X_test, y_test)
-    print('{}: {}'.format(col, score))
-
-# Using 'Detergents_Paper'
-print('-----')
-print('Using Detergents_Paper...')
+# Make a copy of the DataFrame
 new_data = data.drop('Detergents_Paper', axis=1)
 
-X_train, X_test, y_train, y_test = train_test_split(new_data, data['Detergents_Paper'], test_size=.25, random_state=0)
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(new_data, data['Detergents_Paper'], test_size=.25, random_state=42)
 
-regressor = DecisionTreeRegressor(random_state=0).fit(X_train, y_train)
+# Create a decision tree regressor and fit it to the training set
+regressor = DecisionTreeRegressor(random_state=42).fit(X_train, y_train)
 
+# Report the score of the prediction using the testing set
 score = regressor.score(X_test, y_test)
-print('Detergents_Paper: {}'.format(score))
+print('Regressor Score:',score)
 
 #%% [markdown]
 # ### Question 2
@@ -151,18 +122,14 @@ print('Detergents_Paper: {}'.format(score))
 # 
 # **Hint:** The coefficient of determination, `R^2`, is scored between 0 and 1, with 1 being a perfect fit. A negative `R^2` implies the model fails to fit the data. If you get a low score for a particular feature, that lends us to beleive that that feature point is hard to predict using the other features, thereby making it an important feature to consider when considering relevance.
 #%% [markdown]
-# **Answer:** 
-#
-# I attempt to predict `Detergents_Paper` because this feature gives 0.73 for R². This feature can be a good choice
-# to identify the customers' spending habits due to a high value to R², saying that others features correlate well with `Detergents_Paper`. 
-
+# **Answer:**
 #%% [markdown]
 # ### Visualize Feature Distributions
 # To get a better understanding of the dataset, we can construct a scatter matrix of each of the six product features present in the data. If you found that the feature you attempted to predict above is relevant for identifying a specific customer, then the scatter matrix below may not show any correlation between that feature and the others. Conversely, if you believe that feature is not relevant for identifying a specific customer, the scatter matrix might show a correlation between that feature and another feature in the data. Run the code block below to produce a scatter matrix.
 
 #%%
 # Produce a scatter matrix for each pair of features in the data
-pd.plotting.scatter_matrix(data, alpha = 0.3, figsize = (14,8), diagonal = 'kde');
+pd.plotting.scatter_matrix(data, alpha=.3, figsize=(14,8), diagonal='kde');
 
 #%% [markdown]
 # ### Question 3
@@ -172,21 +139,15 @@ pd.plotting.scatter_matrix(data, alpha = 0.3, figsize = (14,8), diagonal = 'kde'
 # * How is the data for those features distributed?
 # 
 # **Hint:** Is the data normally distributed? Where do most of the data points lie? You can use [corr()](https://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.corr.html) to get the feature correlations and then visualize them using a [heatmap](http://seaborn.pydata.org/generated/seaborn.heatmap.html)(the data that would be fed into the heatmap would be the correlation values, for eg: `data.corr()`) to gain further insight.
-
 #%%
+# Plot Heatmap
 sns.heatmap(data.corr(), annot=True);
 
-#%%
+# Plot Pairplot
 sns.pairplot(data);
 
 #%% [markdown]
-# **Answer:** 
-#
-# While observing correlation between 'Detergents_Paper' and other features, we can see:
-# * `Detergents_Paper` and `Grocery` have a very strong correlation looking through its .92 R² value and a linear correlation in the scatterplot.
-# It is a good choice use `Grocery` in the model to predict `Detergents_Paper`.
-# * `Detergents_Paper` and `Milk` also have a strong correlation but less than DP ~ Grocery, with a .66 value for R².
-# * We can see another strong correlation in the heatmap when we look to `Milk` and `Grocery` with a .73 value for R².
+# **Answer:**
 #%% [markdown]
 # ## Data Preprocessing
 # In this section, you will preprocess the data to create a better representation of customers by performing a scaling on the data and detecting (and optionally removing) outliers. Preprocessing data is often times a critical step in assuring that results you obtain from your analysis are significant and meaningful.
@@ -206,7 +167,7 @@ log_data = np.log(data)
 log_samples = np.log(samples)
 
 # Produce a scatter matrix for each pair of newly-transformed features
-pd.plotting.scatter_matrix(log_data, alpha = 0.3, figsize = (14,8), diagonal = 'kde');
+pd.plotting.scatter_matrix(log_data, alpha=.3, figsize=(14,8), diagonal='kde');
 
 #%% [markdown]
 # ### Observation
@@ -232,33 +193,33 @@ display(log_samples)
 # Once you have performed this implementation, the dataset will be stored in the variable `good_data`.
 
 #%%
-# Select the indices for data points you wish to remove
-outliers  = []
+# List of all outliers
+outliers = []
 
 # For each feature find the data points with extreme high or low values
 for feature in log_data.keys():
     
     # Calculate Q1 (25th percentile of the data) for the given feature
-    Q1 = np.percentile(log_data[feature], 25)
+    Q1 = np.percentile(log_data[feature], 25.)
     
     # Calculate Q3 (75th percentile of the data) for the given feature
-    Q3 = np.percentile(log_data[feature], 75)
+    Q3 = np.percentile(log_data[feature], 75.)
     
     # Use the interquartile range to calculate an outlier step (1.5 times the interquartile range)
-    step = (Q3 - Q1) * 1.5
-    print('Step:', step)
+    step = (Q3-Q1)*1.5
+    print("Outlier step:", step)
     
     # Display the outliers
     print("Data points considered outliers for the feature '{}':".format(feature))
     feature_outliers = log_data[~((log_data[feature] >= Q1 - step) & (log_data[feature] <= Q3 + step))]
     display(feature_outliers)
-
+    
     outliers += feature_outliers.index.tolist()
     
 # Remove the outliers, if any were specified
 good_data = log_data.drop(log_data.index[outliers]).reset_index(drop = True)
-print('Number of outliers (inc duplicates):', len(outliers))
-print('New dataset with removed outliers has {} samples with {} features each.'.format(*good_data.shape))
+print("Number of outliers (inc duplicates): ", len(outliers))
+print("New dataset with removed outliers has {} samples with {} features each.".format(*good_data.shape))
 
 #%% [markdown]
 # ### Question 4
@@ -268,21 +229,7 @@ print('New dataset with removed outliers has {} samples with {} features each.'.
 # 
 # ** Hint: ** If you have datapoints that are outliers in multiple categories think about why that may be and if they warrant removal. Also note how k-means is affected by outliers and whether or not this plays a factor in your analysis of whether or not to remove them.
 #%% [markdown]
-# **Answer:** 
-#
-# Several datapoints were outliers for more than one feature. You can see some points below:
-# * `65` was an outlier for Fresh and Frozen.
-# * `66` was an outlier for Delicatessen and Fresh.
-# * `75` was an outlier for Detergents_Paper and Grocery.
-# * `154` was an outlier for Milk, Delicatessen and Grocery.
-#
-# We see outliers because some datapoints fall well below the IQR, skewing data in some features. The above outliers are more anomalous, given that, they cause 
-# skewing data in multiple features.
-#
-# Considering that they have different magnitude to the rest dataset, it seems reasonable removing these points from the overall data preventing skewing.
-#
-# Hence, all these data points were added to the `outliers` list.
-
+# **Answer:**
 #%% [markdown]
 # ## Feature Transformation
 # In this section you will use principal component analysis (PCA) to draw conclusions about the underlying structure of the wholesale customer data. Since using PCA on a dataset calculates the dimensions which best maximize variance, we will find which compound combinations of features best describe customers.
@@ -297,14 +244,16 @@ print('New dataset with removed outliers has {} samples with {} features each.'.
 
 #%%
 from sklearn.decomposition import PCA
-# Apply PCA by fitting the good data with the same number of dimensions as features
-pca = PCA(n_components=6).fit(good_data)
 
-# Transform log_samples using the PCA fit above
+# Apply PCA by fitting the good data with the same number of dimensions as features
+pca = PCA(n_components=good_data.shape[1]).fit(good_data)
+
+# Transform log_samples using the PCA fit
 pca_samples = pca.transform(log_samples)
 
 # Generate PCA results plot
 pca_results = vs.pca_results(good_data, pca)
+pca_results
 
 #%% [markdown]
 # ### Question 5
@@ -316,19 +265,13 @@ pca_results = vs.pca_results(good_data, pca)
 # **Hint:** A positive increase in a specific dimension corresponds with an *increase* of the *positive-weighted* features and a *decrease* of the *negative-weighted* features. The rate of increase or decrease is based on the individual feature weights.
 #%% [markdown]
 # **Answer:**
-# * The **first principal component** (49.93%) and the **second principal component** (22.59%) explain, **in total**, 72.52% of variance
-# * The first four principal components explain 92.79% of variance.
-# * **1st PC** represents a wide variety of the featureset. Most prominently it represents Detergents_Paper, but also provides information Gain for Milk, Grocery and Delicatassen to some extent. However, it badly predicts Fresh and Frozen categories and needs another component to help. This could represent the 'convenience' or 'supermarket' spending category.
-# * **2nd PC** allows for the recovery of Information Gain for Fresh and Frozen features, and supplements Delicatessen. It provides small gains for Milk and Grocery, and a very small loss of Detergents_Paper. This could represent customers who are in the hospitality or restaurant industry.
-# * **3rd PC** represents gains for Fresh and Detergents_Paper, and minimal or losses for other categories. This could represent smaller corner shops, with convenience items and small amounts of groceries.
-# * **4th PC** represents Frozen and Detergents_Paper, and losses for other categories. This could represent bulk buyers of frozen goods, such as fish importers.
+
 #%% [markdown]
 # ### Observation
 # Run the code below to see how the log-transformed sample data has changed after having a PCA transformation applied to it in six dimensions. Observe the numerical value for the first four dimensions of the sample points. Consider if this is consistent with your initial interpretation of the sample points.
 
 #%%
-# Display sample log-data after having a PCA transformation applied
-display(pd.DataFrame(np.round(pca_samples, 4), columns = pca_results.index.values))
+display(pd.DataFrame(data=np.round(pca_samples, 4), columns=pca_results.index.values))
 
 #%% [markdown]
 # ### Implementation: Dimensionality Reduction
@@ -340,26 +283,20 @@ display(pd.DataFrame(np.round(pca_samples, 4), columns = pca_results.index.value
 #  - Apply a PCA transformation of `log_samples` using `pca.transform`, and assign the results to `pca_samples`.
 
 #%%
-# Apply PCA by fitting the good data with only two dimensions
+# Apply PCA by fitting the good data with only two dimmensions
 pca = PCA(n_components=2).fit(good_data)
 
-# Transform the good data using the PCA fit above
+# Transform the good data using PCA fit
 reduced_data = pca.transform(good_data)
 
-# Transform log_samples using the PCA fit above
+# Transform log_samples using the PCA fit
 pca_samples = pca.transform(log_samples)
 
 # Create a DataFrame for the reduced data
-reduced_data = pd.DataFrame(reduced_data, columns = ['Dimension 1', 'Dimension 2'])
+reduced_data = pd.DataFrame(data=np.round(reduced_data, 4), columns=['Dimension 1', 'Dimension 2'])
+
+# Plot PCA Results
 vs.pca_results(good_data, pca)
-
-#%% [markdown#]
-# ### Observation
-# Run the code below to see how the log-transformed sample data has changed after having a PCA transformation applied to it using only two dimensions. Observe how the values for the first two dimensions remains unchanged when compared to a PCA transformation in six dimensions.
-
-#%%
-# Display sample log-data after applying PCA transformation in two dimensions
-display(pd.DataFrame(np.round(pca_samples, 4), columns = ['Dimension 1', 'Dimension 2']))
 
 #%% [markdown]
 # ## Visualizing a Biplot
@@ -367,10 +304,9 @@ display(pd.DataFrame(np.round(pca_samples, 4), columns = ['Dimension 1', 'Dimens
 # 
 # Run the code cell below to produce a biplot of the reduced-dimension data.
 
-#%%
-# Create a biplot
-vs.biplot(good_data, reduced_data, pca)
 
+#%%
+vs.biplot(good_data, reduced_data, pca);
 #%% [markdown]
 # ### Observation
 # 
@@ -391,15 +327,6 @@ vs.biplot(good_data, reduced_data, pca)
 # ** Hint: ** Think about the differences between hard clustering and soft clustering and which would be appropriate for our dataset.
 #%% [markdown]
 # **Answer:**
-# * **K_Means:** has fewer parameters, each cluster has traditional assignments of Z and $\mu$. As a result, it is much faster and is well suited towards
-# situations with lots of data, and where clusters are clearly separable and non-uniform.
-# * **Gaussian Mixture Model:** has many more parameters Z, $\mu$, $pi$ and $\sigma$, and it is a method of `soft clustering`. By using Gaussian distributions
-# and probabilities, data points do not necessarilyhave to be assigned ridigly, and ones with lower probability could be assigned to multiple clusters at once.
-# It is able to assign non-spherical clusters.
-#
-# Given the above scatterplot and looking to the log distributions, the data appears to be quite uniform. A lot of data points don't clearly 
-# belong to one particular cluster or another, so it seems more logical to use a Gaussian Mixture Model here.
-
 #%% [markdown]
 # ### Implementation: Creating Clusters
 # Depending on the problem, the number of clusters that you expect to be in the data may already be known. When the number of clusters is not known *a priori*, there is no guarantee that a given number of clusters best segments the data, since it is unclear what structure exists in the data — if any. However, we can quantify the "goodness" of a clustering by calculating each data point's *silhouette coefficient*. The [silhouette coefficient](http://scikit-learn.org/stable/modules/generated/sklearn.metrics.silhouette_score.html) for a data point measures how similar it is to its assigned cluster from -1 (dissimilar) to 1 (similar). Calculating the *mean* silhouette coefficient provides for a simple scoring method of a given clustering.
@@ -413,34 +340,76 @@ vs.biplot(good_data, reduced_data, pca)
 #    - Assign the silhouette score to `score` and print the result.
 
 #%%
-from sklearn.mixture import GaussianMixture
-from sklearn.metrics import silhouette_score
+# Plot Dimension 1 vs Dimension 2
+plt.scatter(reduced_data['Dimension 1'], reduced_data['Dimension 2']);
+plt.title('Dimension 1 vs Dimension 2', fontsize=12)
 
-def clusterGMM(k):
-    global clusterer, preds, centers, sample_preds
-    # Apply your GMM algorithm to the reduced data 
-    clusterer = GaussianMixture(k, random_state=0).fit(reduced_data)
+#%% [markdown]
+# ### For K-Means
+
+#%%
+from sklearn.cluster import KMeans
+
+def clusterKMeans(k):
+    # Apply K-Means algorithm to the reduced data
+    kmeans = KMeans(n_clusters=k, random_state=42).fit(reduced_data)
 
     # Predict the cluster for each data point
-    preds = clusterer.predict(reduced_data)
+    preds = kmeans.predict(reduced_data)
 
     # Find the cluster centers
-    centers = clusterer.means_
+    centers = kmeans.cluster_centers_
 
     # Predict the cluster for each transformed sample data point
-    sample_preds = clusterer.predict(pca_samples)
+    sample_preds = kmeans.predict(pca_samples)
 
     # Calculate the mean silhouette coefficient for the number of clusters chosen
     score = silhouette_score(reduced_data, preds)
+    
     return score
 
 results = pd.DataFrame(columns=['Silhouette Score'])
 results.columns.name = 'Number of Clusters'
 
-for k in range(2,16):
-    score = clusterGMM(k)
-    results = results.append(pd.DataFrame([score], columns=['Silhouette Score'], index=[k]))
+for k in range(2,15):
+    score   = clusterKMeans(k)
+    results = results.append(pd.DataFrame(score, columns=['Silhouette Score'], index=[k]))
+
 results
+
+#%% [markdown]
+# ### For Gaussian Mixture Model
+
+#%%
+from sklearn.mixture import GaussianMixture
+
+def clusterGMM(k):
+    global preds, centers, sample_preds
+    # Apply GMM algorithm to the reduced data
+    gmm = GaussianMixture(n_components=k, random_state=42).fit(reduced_data)
+
+    # Predict the cluster for each data point
+    preds = gmm.predict(reduced_data)
+
+    # Find the cluster centers
+    centers = gmm.means_
+
+    # Predict the cluster for each transformed sample data point
+    sample_preds = gmm.predict(pca_samples)
+
+    # Calculate the mean silhouette coefficient for the number of clusters chosen
+    score = silhouette_score(reduced_data, preds)
+
+    return score
+
+result = pd.DataFrame(columns=['Silhouette Score'])
+result.columns.name = 'Number of Clusters'
+
+for k in range(2,16):
+    score  = clusterGMM(k)
+    result = result.append(pd.DataFrame(score, columns=['Silhouette Score'], index=[k]))
+
+result
 
 #%% [markdown]
 # ### Question 7
@@ -448,17 +417,15 @@ results
 # * Report the silhouette score for several cluster numbers you tried. 
 # * Of these, which number of clusters has the best silhouette score?
 #%% [markdown]
-# **Answer:** 
-#
-# Overall, a GMM with two clusters has the best silhouette score.
+# **Answer:**
 #%% [markdown]
 # ### Cluster Visualization
 # Once you've chosen the optimal number of clusters for your clustering algorithm using the scoring metric above, you can now visualize the results by executing the code block below. Note that, for experimentation purposes, you are welcome to adjust the number of clusters for your clustering algorithm to see various visualizations. The final visualization provided should, however, correspond with the optimal number of clusters. 
 
+
 #%%
-# Display the results of the clustering from implementation for two clusters
-clusterGMM(2)
-vs.cluster_results(reduced_data, preds, centers, pca_samples)
+# Display the results of clustering from implementation
+vs.cluster_results(reduced_data, preds, centers, pca_samples);
 
 #%% [markdown]
 # ### Implementation: Data Recovery
@@ -467,7 +434,6 @@ vs.cluster_results(reduced_data, preds, centers, pca_samples)
 # In the code block below, you will need to implement the following:
 #  - Apply the inverse transform to `centers` using `pca.inverse_transform` and assign the new centers to `log_centers`.
 #  - Apply the inverse function of `np.log` to `log_centers` using `np.exp` and assign the true centers to `true_centers`.
-# 
 
 #%%
 # Inverse transform the centers
@@ -477,8 +443,8 @@ log_centers = pca.inverse_transform(centers)
 true_centers = np.exp(log_centers)
 
 # Display the true centers
-segments = ['Segment {}'.format(i) for i in range(0,len(centers))]
-true_centers = pd.DataFrame(np.round(true_centers), columns = data.keys())
+segments     = ['Segment {}'.format(i) for i in range(0, len(centers))]
+true_centers = pd.DataFrame(np.round(true_centers), columns=data.keys())
 true_centers.index = segments
 display(true_centers)
 
@@ -488,21 +454,8 @@ display(true_centers)
 # * Consider the total purchase cost of each product category for the representative data points above, and reference the statistical description of the dataset at the beginning of this project(specifically looking at the mean values for the various feature points). What set of establishments could each of the customer segments represent?
 # 
 # **Hint:** A customer who is assigned to `'Cluster X'` should best identify with the establishments represented by the feature set of `'Segment X'`. Think about what each segment represents in terms their values for the feature points chosen. Reference these values with the mean values to get some perspective into what kind of establishment they represent.
-
-#%%
-sns.heatmap((true_centers - data.mean())/data.std(ddof=0), square=True, annot=True, cbar=False);
-
-#%%
-for i in range(2):
-    plt.figure()
-    plt.axes().set_title('Segment ' + str(i))
-    sns.barplot(true_centers.iloc[i], true_centers.columns.values);
-
 #%% [markdown]
-# **Answer:** 
-# * **Cluster 0:** This most likely to represent cafes or restaurants serving fresh food due to a high value for Fresh category.
-# * **Cluster 1:** Milk and Grocery are predominant here comparing to the other categories. It could be bulk distributors or large resellers such as supermarkets.
-
+# **Answer:**
 #%% [markdown]
 # ### Question 9
 # 
@@ -512,29 +465,11 @@ for i in range(2):
 # Run the code block below to find which cluster each sample point is predicted to be.
 
 #%%
-# Display the predictions
 for i, pred in enumerate(sample_preds):
-    print("Sample point", i, "predicted to be in Cluster", pred)
+    print('Sample point', i, 'predicted to be in Cluster', pred)
 
 #%% [markdown]
 # **Answer:**
-# * **Index 3 (0)**
-#   * **Previous Assessment:** Restaurant
-#   * **Model Assessment:** Restaurants or Cafes
-#   * **Comments:** The model agreeded with the original predictions. I thought the predominance of Frozen and Fresh as a 
-# characteristic of restaurants and the model seems to suggest this as well.
-# 
-# * **Index 10 (1)**
-#   * **Previous Assessment:** Grocery Shop or Supermarket
-#   * **Model Assessment:** Bulk Distributor or Supermarket
-#   * **Comments:** The model agreeded with the original predictions. I thought the predominance of Grocery as a characteristic of supermarkets and the
-# model seems to suggest this as well.
-#
-# * **Index 100 (2)**
-#   * **Previous Assessment:** Supermarket
-#   * **Model Assessment:** Bulk Distributor or Supermarket
-#   * **Comments:** The model agreeded with the original predictions. I thought the predominance of all features as a characteristic of supermarkets
-#  with small cafes inside and model seems to suggest this as well.
 #%% [markdown]
 # ## Conclusion
 #%% [markdown]
@@ -548,16 +483,6 @@ for i, pred in enumerate(sample_preds):
 # **Hint:** Can we assume the change affects all customers equally? How can we determine which group of customers it affects the most?
 #%% [markdown]
 # **Answer:**
-# 
-# The model has established two main customer types - Cluster 0 `Restaurants/Cafes` that stocks fresh food and Cluster 1 `Supermarket/Bulk Distributors`
-# that stocks lots of different items. We can imagine two scenarios:
-# * It is likely that customers from Cluster 0, that serves lots of fresh food, are going to want 5-day weeks in order to keep food as fresh as possible.
-# * Cluster 1 could be more flexible - they buy a more wide variety of perishable and non-perishable goods, so they do not necessarily need a daily delivery.
-# So, the Company could run `A/B Tests` and generalize. By picking a subset customers from each cluster, they can evaluate feedback separately. It could be 
-# established whether changing the delivery service can be critical to each segment, and whether customers are happy with the change.
-#
-# If a trend is found in a particular cluster, it allows a business to make targeted decisions to benefit customers depending on their profile.
-
 #%% [markdown]
 # ### Question 11
 # Additional structure is derived from originally unlabeled data when using clustering techniques. Since each customer has a ***customer segment*** it best identifies with (depending on the clustering algorithm applied), we can consider *'customer segment'* as an **engineered feature** for the data. Assume the wholesale distributor recently acquired ten new customers and each provided estimates for anticipated annual spending of each product category. Knowing these estimates, the wholesale distributor wants to classify each new customer to a ***customer segment*** to determine the most appropriate delivery service.  
@@ -566,13 +491,6 @@ for i, pred in enumerate(sample_preds):
 # **Hint:** A supervised learner could be used to train on the original customers. What would be the target variable?
 #%% [markdown]
 # **Answer:**
-#
-# We can use semi-supervised learning approach to classify new customers:
-# * By the first running an unsupervised clustering technique, such as Gaussian Mixture Model, we first establish clusters and use this as a new feature - 
-# which cluster they are in. We label it as `Customer Segment` and they could be assigned arbitrary enumerating values.
-# * Then, we create new data points for each new customer, with all of their spending estimates. After that, we can use a supervised learnin technique,
-# for example a Support Vector Machine (which does very well to separate classified clusters) with a target variable of `Customer Segment`.
-# * Standard Supervised Learning optimizations could be used to tune the model: *boosting*, *cross-validation* etc.
 #%% [markdown]
 # ### Visualizing Underlying Distributions
 # 
@@ -581,14 +499,6 @@ for i, pred in enumerate(sample_preds):
 # Run the code block below to see how each data point is labeled either `'HoReCa'` (Hotel/Restaurant/Cafe) or `'Retail'` the reduced space. In addition, you will find the sample points are circled in the plot, which will identify their labeling.
 
 #%%
-# Display the clustering results based on 'Channel' data
-vs.channel_results(reduced_data, outliers, pca_samples)
-
-#%% [markdown]
-# ### Question 12
-# 
-# * How well does the clustering algorithm and number of clusters you've chosen compare to this underlying distribution of Hotel/Restaurant/Cafe customers to Retailer customers? 
-# * Are there customer segments that would be classified as purely 'Retailers' or 'Hotels/Restaurants/Cafes' by this distribution? 
-# * Would you consider these classifications as consistent with your previous definition of the customer segments?
-#%% [markdown]
-# **Answer:**
+# This part isn't working
+path = os.getcwd()
+vs.channel_results(path, reduced_data, outliers, pca_samples)

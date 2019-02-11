@@ -25,7 +25,6 @@ os.chdir('/home/matheus/Documents/GitHub/machine_learning_nd/unsupervised_learni
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
 from IPython.display import display # Allows the use of display() for DataFrames
 
 # Import supplementary visualizations code visuals.py
@@ -592,3 +591,6 @@ vs.channel_results(reduced_data, outliers, pca_samples)
 # * Would you consider these classifications as consistent with your previous definition of the customer segments?
 #%% [markdown]
 # **Answer:**
+#%% [markdown]
+# > **Note**: Once you have completed all of the code implementations and successfully answered each question above, you may finalize your work by exporting the iPython Notebook as an HTML document. You can do this by using the menu above and navigating to  
+# **File -> Download as -> HTML (.html)**. Include the finished document along with this notebook as your submission.

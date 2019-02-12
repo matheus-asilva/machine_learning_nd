@@ -72,7 +72,8 @@ we will be looking for the lowest score as the winner.
 
 MAE score is defined as the mean of the absolute value of the real minus predicted values of each row in the validation/test 
 data sets:     
-  1/n sum(abs(each_predicted_y-each_real_y))) 
+
+$MAE = \frac{1}{n} \sum_{i=1}^{n}|\hat y - y|$
 
 The advantage of MAE (other than being a contest requirment) is that it provides a simple measurement of the error of a 
 prediction that disregards the sign of the error and doesn't over-emphasize outliers.

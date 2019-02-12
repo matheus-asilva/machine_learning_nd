@@ -73,7 +73,7 @@ we will be looking for the lowest score as the winner.
 MAE score is defined as the mean of the absolute value of the real minus predicted values of each row in the validation/test 
 data sets:     
 
-$MAE = \frac{1}{n} \sum_{i=1}^{n}|\hat y - y|$
+<a href="https://www.codecogs.com/eqnedit.php?latex=MAE&space;=&space;\frac{1}{n}&space;\sum_{i=1}^{n}|\hat&space;y&space;-&space;y|" target="_blank"><img src="https://latex.codecogs.com/gif.latex?MAE&space;=&space;\frac{1}{n}&space;\sum_{i=1}^{n}|\hat&space;y&space;-&space;y|" title="MAE = \frac{1}{n} \sum_{i=1}^{n}|\hat y - y|" /></a>
 
 The advantage of MAE (other than being a contest requirment) is that it provides a simple measurement of the error of a 
 prediction that disregards the sign of the error and doesn't over-emphasize outliers.

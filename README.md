@@ -49,10 +49,6 @@ This repository contains project files and lecture notes for Udacity's Machine L
 
 **See lecture notes:** [here](3_unsupervised_learning.pdf)
 
-### Deep learning
-
-**Topics covered in this section:**
-
 ### Reinforcement learning
 
 **Topics covered in this section:**
@@ -75,6 +71,10 @@ Policy function approximation, stochastic policy search, policy gradients, Monte
 - **Actor-critic methods**  
 
 **See lecture notes:** [here](5_reinforcement_learning.pdf)
+
+### Deep learning
+
+**Topics covered in this section:**
 
 - **Neuronal networks**  
   Perceptron trick, perceptron algorithm, sigmoid activation, maximum likelihood, cross entropy, logistic regression, perceptron and gradient descent

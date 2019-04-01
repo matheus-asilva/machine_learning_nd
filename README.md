@@ -53,15 +53,6 @@ This repository contains project files and lecture notes for Udacity's Machine L
 
 **Topics covered in this section:**
 
-- **Neuronal networks**  
-  Perceptron trick, perceptron algorithm, sigmoid activation, maximum likelihood, cross entropy, logistic regression, perceptron and gradient descent
-- **Deep neural networks**    
-  Regularization, dropout, vanishing gradients and activation function, momentum, keras optimisers
-- **Convolutional neural networks**  
-  Model validation, image augmentation
-
-**See lecture notes:** [here](4_deep_learning.pdf)
-
 ### Reinforcement learning
 
 **Topics covered in this section:**
@@ -84,3 +75,12 @@ Policy function approximation, stochastic policy search, policy gradients, Monte
 - **Actor-critic methods**  
 
 **See lecture notes:** [here](5_reinforcement_learning.pdf)
+
+- **Neuronal networks**  
+  Perceptron trick, perceptron algorithm, sigmoid activation, maximum likelihood, cross entropy, logistic regression, perceptron and gradient descent
+- **Deep neural networks**    
+  Regularization, dropout, vanishing gradients and activation function, momentum, keras optimisers
+- **Convolutional neural networks**  
+  Model validation, image augmentation
+
+**See lecture notes:** [here](4_deep_learning.pdf)
